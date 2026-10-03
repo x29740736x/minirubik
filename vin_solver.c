@@ -73,16 +73,7 @@ static state_t apply_move(state_t state, uint8_t move)
         state = quarter_turn(state, (uint8_t) (move / 3U));
     return state;
 }
-static void print_state(const state_t *state)
-{
-    for (uint8_t i = 0; i < CUBIES; ++i)
-        printf("%u", state->p[i] + 1);
 
-    for (uint8_t i = 0; i < CUBIES; ++i)
-        printf("%u", state->o[i] + 1);
-
-    printf("\n");
-}
 
 /*@ requires \valid_read(state);
     requires \forall integer i; 0 <= i < CUBIES ==>
@@ -140,7 +131,7 @@ static void unrank_state(uint32_t rank, state_t *state)
         uint8_t q = (uint8_t) (p / f);
         p %= f;
         state->p[i] = available[q];
-        for (uint8_t j = q; j + 1U < CUBIES - i; ++j)
+        for (uint8_t j = q; j + 1 < CUBIES - i; ++j)
             available[j] = available[j + 1U];
         if (i < 5)
             f /= 6U - i;
@@ -220,7 +211,7 @@ static void build_p_distance(uint8_t p_distance[PERMUTATIONS])//from Vincent
     }
 
 
-    /* assign all p unvisited
+    // assign all p unvisited
     memset(p_distance, UINT8_MAX, PERMUTATIONS);
 
 
@@ -347,7 +338,7 @@ static int ida_search(state_t state,
     uint8_t h_value = heuristic(h_p, h_o);
 
     //剪枝
-    if ((uint8_t)(g + h_value) > limit)
+    if ((g + h_value) > limit)
         return 0;
 
     // solved rank = 0
@@ -466,14 +457,7 @@ static int parse_state(const char *input, state_t *state)
     return input[14] == '\0' && valid(state);
 }
 
-/* stdout is fully buffered off a terminal, so a write error surfaces at the
- * flush, not at the printf that queued the bytes. Every exit path that has
- * produced output goes through here.
- */
-static int output_failed(void)
-{
-    return fflush(stdout) != 0 || ferror(stdout);
-}
+
 
 static int self_test(void)
 {
@@ -500,6 +484,18 @@ int main(int argc, char **argv)
     uint8_t o_distance[ORIENTATIONS];
     state_t state;
 
+    // --self-test
+    if (argc == 2 && strcmp(argv[1], "--self-test") == 0) {
+        if (!self_test()) {
+            printf("self-test failed\n");
+            return 1;
+        }
+
+        printf("self-test passed\n");
+        return 0;
+    }
+
+    // original ip test
     if (argc != 2 || !parse_state(argv[1], &state)) {
         printf("invalid state\n");
         return 1;
