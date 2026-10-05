@@ -61,16 +61,35 @@ static state_t quarter_turn(state_t state, uint8_t face)
     for (uint8_t i = 0; i < CUBIES; ++i) {
         uint8_t from = source[face][i];
         result.p[i] = state.p[from];
-        result.o[i] = (uint8_t) ((state.o[from] + twist[face][i]) % 3U);
+        uint8_t orientation = (uint8_t) (state.o[from] + twist[face][i]);
+
+        if (orientation >= 3)
+            orientation -= 3;
+
+        result.o[i] = orientation;
     }
     return result;
 }
 
 static state_t apply_move(state_t state, uint8_t move)
 {
-    uint8_t turns = (uint8_t) (move % 3U + 1U);
+    uint8_t face;
+    uint8_t turns;
+
+    if (move < 3) {
+        face = 0;
+        turns = (uint8_t) (move + 1);
+    } else if (move < 6) {
+        face = 1;
+        turns = (uint8_t) (move - 3 + 1);
+    } else {
+        face = 2;
+        turns = (uint8_t) (move - 6 + 1);
+    }
+
     for (uint8_t i = 0; i < turns; ++i)
-        state = quarter_turn(state, (uint8_t) (move / 3U));
+        state = quarter_turn(state, face);
+
     return state;
 }
 
@@ -85,6 +104,54 @@ static state_t apply_move(state_t state, uint8_t move)
     assigns \nothing;
     ensures \result < STATES;
  */
+
+static uint32_t multiply_small(uint32_t value, uint8_t factor)
+{
+    switch (factor) {
+    case 7:
+        return (value << 3) - value;
+    case 6:
+        return (value << 2) + (value << 1);
+    case 5:
+        return (value << 2) + value;
+    case 4:
+        return value << 2;
+    case 3:
+        return (value << 1) + value;
+    case 2:
+        return value << 1;
+    default:
+        return value; /* factor = 1 */
+    }
+}
+
+static uint16_t rank_p(const state_t *state)
+{
+    uint32_t p = 0;
+
+    for (uint8_t i = 0; i < CUBIES; ++i) {
+        uint8_t smaller = 0;
+
+        for (uint8_t j = (uint8_t) (i + 1U); j < CUBIES; ++j)
+            if (state->p[j] < state->p[i])
+                ++smaller;
+
+        p = multiply_small(p, (uint8_t) (CUBIES - i)) + smaller;
+    }
+
+    return (uint16_t) p;
+}
+
+static uint16_t rank_o(const state_t *state)
+{
+    uint32_t o = 0;
+
+    for (uint8_t i = 0; i < 6; ++i)
+        o = (o << 1) + o + state->o[i];
+
+    return (uint16_t) o;
+}
+
 static uint32_t rank_state(const state_t *state)
 {
     uint32_t p = 0, o = 0;
@@ -106,7 +173,7 @@ static uint32_t rank_state(const state_t *state)
         for (uint8_t j = (uint8_t) (i + 1U); j < CUBIES; ++j)
             if (state->p[j] < state->p[i])
                 ++smaller;
-        p = p * (CUBIES - i) + smaller;
+        p = multiply_small(p, (uint8_t) (CUBIES - i)) + smaller;
     }
     /*@ loop invariant 0 <= i <= 6;
         loop invariant (i == 0 ==> o == 0) && (i == 1 ==> o < 3) &&
@@ -117,31 +184,100 @@ static uint32_t rank_state(const state_t *state)
         loop variant 6 - i;
      */
     for (uint8_t i = 0; i < 6; ++i)
-        o = o * 3U + state->o[i];
-    return p * ORIENTATIONS + o;
+        o = (o << 1) + o + state->o[i];
+    return (p << 9) + (p << 7) + (p << 6) + (p << 4) + (p << 3) + p + o;
 }
 
 /*@ requires \valid(state); requires rank < STATES; assigns *state; */
+
+// Used here for 0 <= value < 729.
+static uint32_t divide_by_3(uint32_t value, uint8_t *remainder)
+{
+    uint32_t divisor = 3;
+    uint32_t bit = 1;
+    uint32_t quotient = 0;
+
+    while (divisor <= (value >> 1)) {
+        divisor <<= 1;
+        bit <<= 1;
+    }
+
+    while (bit != 0) {
+        if (value >= divisor) {
+            value -= divisor;
+            quotient += bit;
+        }
+
+        divisor >>= 1;
+        bit >>= 1;
+    }
+
+    *remainder = (uint8_t) value;
+    return quotient;
+}
+
+// for Rank<state
+static uint32_t divide_by_729(uint32_t value, uint32_t *remainder)
+{
+    uint32_t divisor = 729;
+    uint32_t bit = 1;
+    uint32_t quotient = 0;
+
+    while (divisor <= (value >> 1)) {
+        divisor <<= 1;
+        bit <<= 1;
+    }
+
+    while (bit != 0) {
+        if (value >= divisor) {
+            value -= divisor;
+            quotient += bit;
+        }
+
+        divisor >>= 1;
+        bit >>= 1;
+    }
+
+    *remainder = value;
+    return quotient;
+}
 static void unrank_state(uint32_t rank, state_t *state)
 {
+    static const uint16_t factorial[CUBIES] = {720, 120, 24, 6, 2, 1, 1};
     uint8_t available[CUBIES] = {0, 1, 2, 3, 4, 5, 6};
-    uint32_t p = rank / ORIENTATIONS, o = rank % ORIENTATIONS, f = 720;
+    uint32_t o;
+    uint32_t p = divide_by_729(rank, &o);
     uint8_t sum = 0;
     for (uint8_t i = 0; i < CUBIES; ++i) {
-        uint8_t q = (uint8_t) (p / f);
-        p %= f;
+        uint32_t f = factorial[i];
+
+        uint8_t q = 0;
+
+        while (p >= f) {
+            p -= f;
+            ++q;
+        }
+
         state->p[i] = available[q];
         for (uint8_t j = q; j + 1 < CUBIES - i; ++j)
             available[j] = available[j + 1U];
-        if (i < 5)
-            f /= 6U - i;
     }
     for (uint8_t i = 6; i-- > 0;) {
-        state->o[i] = (uint8_t) (o % 3U);
-        sum = (uint8_t) (sum + state->o[i]);
-        o /= 3U;
+        uint8_t digit;
+
+        o = divide_by_3(o, &digit);
+        state->o[i] = digit;
+        sum = (uint8_t) (sum + digit);
     }
-    state->o[6] = (uint8_t) ((3U - sum % 3U) % 3U);
+    uint8_t remainder = sum;
+
+    while (remainder >= 3)
+        remainder = (uint8_t) (remainder - 3);
+
+    if (remainder == 0)
+        state->o[6] = 0;
+    else
+        state->o[6] = (uint8_t) (3 - remainder);
 }
 
 /*@ requires \valid_read(state);
@@ -186,27 +322,33 @@ static int valid(const state_t *state)
                 return 0;
         sum = (uint8_t) (sum + state->o[i]);
     }
-    return sum % 3U == 0;
+    while (sum >= 3)
+        sum = (uint8_t) (sum - 3);
+
+    return sum == 0;
 }
 
-static void build_p_distance(uint8_t p_distance[PERMUTATIONS])//from Vincent
+static uint32_t multiply_729(uint32_t value)
+{
+    return (value << 9) + (value << 7) + (value << 6) + (value << 4) +
+           (value << 3) + value;
+}
+
+static void build_p_distance(uint8_t p_distance[PERMUTATIONS])  // from Vincent
 {
     uint16_t permutation[3][PERMUTATIONS];
     uint16_t queue[PERMUTATIONS];
 
     state_t state;
 
-    //建立 permutation table 
+    // 建立 permutation table
     for (uint16_t rank = 0; rank < PERMUTATIONS; ++rank) {
-
-        unrank_state((uint32_t) rank * ORIENTATIONS, &state);
+        unrank_state(multiply_729(rank), &state);
 
         for (uint8_t face = 0; face < 3; ++face) {
-
             state_t next = quarter_turn(state, face);
 
-            permutation[face][rank] =
-                (uint16_t)(rank_state(&next) / ORIENTATIONS);
+            permutation[face][rank] = rank_p(&next);
         }
     }
 
@@ -221,27 +363,22 @@ static void build_p_distance(uint8_t p_distance[PERMUTATIONS])//from Vincent
 
     queue[0] = 0;
 
-    // solved permutation rank = 0 
+    // solved permutation rank = 0
     p_distance[0] = 0;
 
 
-    //BFS
+    // BFS
     while (head < tail) {
-
         uint16_t here = queue[head++];
 
         for (uint8_t face = 0; face < 3; ++face) {
-
             uint16_t next = here;
 
             for (uint8_t turn = 0; turn < 3; ++turn) {
-
                 next = permutation[face][next];
 
                 if (p_distance[next] == UINT8_MAX) {
-
-                    p_distance[next] =
-                        (uint8_t)(p_distance[here] + 1);
+                    p_distance[next] = (uint8_t) (p_distance[here] + 1);
 
                     queue[tail++] = next;
                 }
@@ -251,28 +388,25 @@ static void build_p_distance(uint8_t p_distance[PERMUTATIONS])//from Vincent
 }
 
 
-static void build_o_distance(uint8_t o_distance[ORIENTATIONS])//From Vincent
+static void build_o_distance(uint8_t o_distance[ORIENTATIONS])  // From Vincent
 {
     uint16_t orientation[3][ORIENTATIONS];
     uint16_t queue[ORIENTATIONS];
 
     state_t state;
 
-    //build o table
+    // build o table
     for (uint16_t rank = 0; rank < ORIENTATIONS; ++rank) {
-
         unrank_state(rank, &state);
 
         for (uint8_t face = 0; face < 3; ++face) {
-
             state_t next = quarter_turn(state, face);
 
-            orientation[face][rank] =
-                (uint16_t)(rank_state(&next) % ORIENTATIONS);
+            orientation[face][rank] = rank_o(&next);
         }
     }
 
-    //let all o_state unvisited
+    // let all o_state unvisited
     memset(o_distance, UINT8_MAX, ORIENTATIONS);
 
     // BFS queue
@@ -281,26 +415,21 @@ static void build_o_distance(uint8_t o_distance[ORIENTATIONS])//From Vincent
 
     queue[0] = 0;
 
-    // solved o rank = 0 
+    // solved o rank = 0
     o_distance[0] = 0;
 
-    // BFS 
+    // BFS
     while (head < tail) {
-
         uint16_t here = queue[head++];
 
         for (uint8_t face = 0; face < 3; ++face) {
-
             uint16_t next = here;
 
             for (uint8_t turn = 0; turn < 3; ++turn) {
-
                 next = orientation[face][next];
 
                 if (o_distance[next] == UINT8_MAX) {
-
-                    o_distance[next] =
-                        (uint8_t)(o_distance[here] + 1);
+                    o_distance[next] = (uint8_t) (o_distance[here] + 1);
 
                     queue[tail++] = next;
                 }
@@ -310,12 +439,11 @@ static void build_o_distance(uint8_t o_distance[ORIENTATIONS])//From Vincent
 }
 
 
-static uint8_t heuristic(uint8_t h_p, uint8_t h_o)//from Vincent
+static uint8_t heuristic(uint8_t h_p, uint8_t h_o)  // from Vincent
 {
     if (h_p >= h_o) {
         return h_p;
-    }
-    else {
+    } else {
         return h_o;
     }
 }
@@ -328,21 +456,19 @@ static int ida_search(state_t state,
                       uint8_t path[11],
                       uint8_t previous_face)
 {
-    uint32_t rank = rank_state(&state);
-
-    uint16_t p_rank = (uint16_t)(rank / ORIENTATIONS);
-    uint16_t o_rank = (uint16_t)(rank % ORIENTATIONS);
+    uint16_t p_rank = rank_p(&state);
+    uint16_t o_rank = rank_o(&state);
 
     uint8_t h_p = p_distance[p_rank];
     uint8_t h_o = o_distance[o_rank];
     uint8_t h_value = heuristic(h_p, h_o);
 
-    //剪枝
+    // 剪枝
     if ((g + h_value) > limit)
         return 0;
 
     // solved rank = 0
-    if (rank == 0)
+    if (p_rank == 0 && o_rank == 0)
         return 1;
 
     // limit
@@ -351,8 +477,14 @@ static int ida_search(state_t state,
 
     // try 9 moves
     for (uint8_t move = 0; move < MOVES; ++move) {
+        uint8_t face;
 
-        uint8_t face = move / 3;
+        if (move < 3)
+            face = 0;
+        else if (move < 6)
+            face = 1;
+        else
+            face = 2;
 
         if (face == previous_face)
             continue;
@@ -361,13 +493,8 @@ static int ida_search(state_t state,
 
         path[g] = move;
 
-        if (ida_search(next,
-                    (uint8_t)(g + 1),
-                    limit,
-                    p_distance,
-                    o_distance,
-                    path,
-                    face)) {
+        if (ida_search(next, (uint8_t) (g + 1), limit, p_distance, o_distance,
+                       path, face)) {
             return 1;
         }
     }
@@ -381,10 +508,8 @@ static int ida_solve(state_t state,
 {
     uint8_t path[11];
 
-    uint32_t rank = rank_state(&state);
-
-    uint16_t p_rank = (uint16_t)(rank / ORIENTATIONS);
-    uint16_t o_rank = (uint16_t)(rank % ORIENTATIONS);
+    uint16_t p_rank = rank_p(&state);
+    uint16_t o_rank = rank_o(&state);
 
     uint8_t h_p = p_distance[p_rank];
     uint8_t h_o = o_distance[o_rank];
@@ -392,14 +517,7 @@ static int ida_solve(state_t state,
     uint8_t limit = heuristic(h_p, h_o);
 
     while (limit <= 11) {
-
-        if (ida_search(state,
-                       0,
-                       limit,
-                       p_distance,
-                       o_distance,
-                       path,3)) {
-
+        if (ida_search(state, 0, limit, p_distance, o_distance, path, 3)) {
             printf("solution (%u moves):", limit);
 
             for (uint8_t i = 0; i < limit; ++i)
@@ -452,7 +570,10 @@ static int parse_state(const char *input, state_t *state)
         int limit = i < 7 ? 7 : 3;
         if (input[i] < '1' || input[i] > '0' + limit)
             return 0;
-        (i < 7 ? state->p : state->o)[i % 7] = (uint8_t) (input[i] - '1');
+        if (i < 7)
+            state->p[i] = (uint8_t) (input[i] - '1');
+        else
+            state->o[i - 7] = (uint8_t) (input[i] - '1');
     }
     return input[14] == '\0' && valid(state);
 }
