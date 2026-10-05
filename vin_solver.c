@@ -11,9 +11,16 @@ enum {
     MOVES = 9
 };
 
+
 typedef struct {
     uint8_t p[CUBIES], o[CUBIES];
 } state_t;
+
+typedef struct {
+    state_t state;
+    uint8_t next_move;
+    uint8_t previous_face;
+} search_frame_t;
 
 /*@ predicate valid_state(state_t *state) =
       (\forall integer i; 0 <= i < CUBIES ==>
@@ -448,35 +455,65 @@ static uint8_t heuristic(uint8_t h_p, uint8_t h_o)  // from Vincent
     }
 }
 
-static int ida_search(state_t state,
-                      uint8_t g,
-                      uint8_t limit,
-                      const uint8_t p_distance[PERMUTATIONS],
-                      const uint8_t o_distance[ORIENTATIONS],
-                      uint8_t path[11],
-                      uint8_t previous_face)
+static int ida_search(
+    state_t state,
+    uint8_t g,
+    uint8_t limit,
+    const uint8_t p_distance[PERMUTATIONS],
+    const uint8_t o_distance[ORIENTATIONS],
+    uint8_t path[11],
+    uint8_t previous_face)
 {
-    uint16_t p_rank = rank_p(&state);
-    uint16_t o_rank = rank_o(&state);
+    search_frame_t frames[12];
+    uint8_t depth = g;
 
-    uint8_t h_p = p_distance[p_rank];
-    uint8_t h_o = o_distance[o_rank];
-    uint8_t h_value = heuristic(h_p, h_o);
+    frames[depth].state = state;
+    frames[depth].next_move = 0;
+    frames[depth].previous_face = previous_face;
 
-    // 剪枝
-    if ((g + h_value) > limit)
-        return 0;
+    while (1) {
+        search_frame_t *current = &frames[depth];
 
-    // solved rank = 0
-    if (p_rank == 0 && o_rank == 0)
-        return 1;
+        // first time ,check heuristic
+        if (current->next_move == 0) {
+            uint16_t p_rank = rank_p(&current->state);
+            uint16_t o_rank = rank_o(&current->state);
 
-    // limit
-    if (g == limit)
-        return 0;
+            uint8_t h = heuristic(
+                p_distance[p_rank],
+                o_distance[o_rank]);
 
-    // try 9 moves
-    for (uint8_t move = 0; move < MOVES; ++move) {
+            if (depth + h > limit) {
+                if (depth == g)
+                    return 0;
+
+                --depth;
+                continue;
+            }
+
+            if (p_rank == 0 && o_rank == 0)
+                return 1;
+
+            if (depth == limit) {
+                if (depth == g)
+                    return 0;
+
+                --depth;
+                continue;
+            }
+        }
+
+        //try this level
+        if (current->next_move >= MOVES) {
+            if (depth == g)
+                return 0;
+
+            --depth;
+            continue;
+        }
+
+        //save next move
+        uint8_t move = current->next_move++;
         uint8_t face;
 
         if (move < 3)
@@ -486,20 +523,19 @@ static int ida_search(state_t state,
         else
             face = 2;
 
-        if (face == previous_face)
+        if (face == current->previous_face)
             continue;
 
-        state_t next = apply_move(state, move);
+        //save move go to next level
+        path[depth] = move;
 
-        path[g] = move;
+        frames[depth + 1].state =
+            apply_move(current->state, move);
+        frames[depth + 1].next_move = 0;
+        frames[depth + 1].previous_face = face;
 
-        if (ida_search(next, (uint8_t) (g + 1), limit, p_distance, o_distance,
-                       path, face)) {
-            return 1;
-        }
+        ++depth;
     }
-
-    return 0;
 }
 
 static int ida_solve(state_t state,
