@@ -495,12 +495,12 @@ A complete BFS based on the original baseline implementation provided the exact 
 
 | Search Implementation | States Checked | Replay Implementation | Result | Verification Time |
 |---|---:|---|---|---:|
-| `vin_solver.c` cubie-array IDA* | 3,674,160 | Original baseline move functions | PASS | 2,748.299 s |
+| `vin_solver.c` cubie-array IDA* | 3,674,160 | Original baseline move functions | PASS | 2,686.302 s |
 
 All states passed both checks. The reported wall-clock time excludes BFS construction and setup. The verifier reported:
 
 ```text
-PASS: 3674160 states; optimal lengths and baseline replay; 2748.299 wall seconds
+PASS: 3674160 states; optimal lengths and baseline replay; 2686.302 wall seconds
 ```
 
 The complete BFS table is used only for host verification and is not included in the RV32I program. This result verifies the tested C search; target-side assembly tests are reported separately in Stage 4.
@@ -965,7 +965,7 @@ This project started from [sysprog21/minirubik at 231796c](https://github.com/sy
 - [GCC comparison](gcc-comparison/README.md)
 - [Pipeline measurements](tests/pipeline/summary.json)
 
-The original full cubie-array H3 JSON/log were overwritten by subsequent incomplete reruns. The PASS line reported above is retained from terminal output, rather than a surviving full-run JSON. See tests/VERIFICATION.md.
+The completed H3 rerun verified all 3,674,160 states. The full result and execution log are preserved in [h3_complete_result.json](tests/h3/h3_complete_result.json) and [h3_complete_run.log](tests/h3/h3_complete_run.log).
 
 ## References
 
