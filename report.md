@@ -525,45 +525,6 @@ These comparisons describe source-level changes. The exhaustive verification est
 
 The RV32I implementation and its code size, static-data size, retired instruction count, and correctness measurements are reported in Stage 4.
 
-<!-- OPTIONAL C EXPERIMENT: excluded from the rendered main report.
-To include it, remove this opening comment and the closing comment below.
-
-## Optional Supplement — P/O Coordinate C Experiment
-
-This is a separate experiment using `po_search.h`, `solver_po.c`, and `verify_po.c`. It does not replace the `vin_solver.c` implementation discussed in the main Stage 3 sections, and its results must not be attributed to `vin_solver.c`'s `ida_search()`.
-
-The experimental search stores P/O ranks in each frame and obtains successors through separate nine-move transition tables. This avoids cubie-level move operations and repeated ranking at each search node. The heuristic, threshold progression, move order, and same-face pruning are preserved.
-
-| Buffer | Storage |
-|---|---:|
-| P transition table | 90,720 bytes |
-| O transition table | 13,122 bytes |
-| P distance table | 5,040 bytes |
-| O distance table | 729 bytes |
-| **Total for these four buffers** | **109,611 bytes** |
-
-The host program constructs these tables at startup. This total excludes frames, paths, temporary construction buffers, and other program data.
-
-The experimental verifier checked all **3,674,160 states** against a saved complete BFS distance table and replayed every solution using my cubie-level `apply_move()` function. All optimal-length comparisons and replays passed in **477.411 wall-clock seconds**, excluding setup.
-
-```text
-PASS: 3674160 optimal lengths; 3674160 own replays; 477.411 wall seconds
-```
-
-Its BFS and replay share my own cube move definitions. The complete distance table is used only for host verification.
-
-A separate single-run comparison of the same first 10,000 state ranks, with full replay in both programs and GCC `-O2`, gave:
-
-| Search Implementation | Verification Time |
-|---|---:|
-| Cubie-array C IDA* | 8.952 s |
-| P/O coordinate C IDA* | 1.530 s |
-
-The coordinate version was approximately **5.85 times faster in this sample**. These are host verification times excluding setup, not target retired instruction counts. The complete 2,748.299-second and 477.411-second runs used different replay implementations, so their ratio is not a controlled measurement of the search change alone.
-
-The assembly in Stage 4 uses P/O coordinate transitions. This experiment provides a corresponding host C search representation; the GCC-generated target reference is measured separately in Section 4.4.
--->
-
 # Stage 4 — RV32I Implementation and Measurement
 
 I implemented the P/O coordinate-based iterative IDA* design in RV32I assembly and evaluated it using Ripes `v2.2.6-106-g5b8a616`. Transition and heuristic tables are generated on the host and included as read-only data. Input validation, search, and solution replay execute on the simulated processor. The measurements exclude LED rendering.
@@ -1004,7 +965,7 @@ This project started from [sysprog21/minirubik at 231796c](https://github.com/sy
 - [GCC comparison](gcc-comparison/README.md)
 - [Pipeline measurements](tests/pipeline/summary.json)
 
-The original full cubie-array H3 JSON/log were overwritten by subsequent incomplete reruns. The PASS line reported above is retained from terminal output, rather than a surviving full-run JSON. See tests/VERIFICATION.md. The coordinate verification is a separate implementation.
+The original full cubie-array H3 JSON/log were overwritten by subsequent incomplete reruns. The PASS line reported above is retained from terminal output, rather than a surviving full-run JSON. See tests/VERIFICATION.md.
 
 ## References
 
