@@ -1,0 +1,41 @@
+{
+  "model": "RV32_5S",
+  "ripes_build": "v2.2.6-106-g5b8a616",
+  "elf_sha256": "67473929dfbc499228e17bc0da1803671b053b48289a3d4ba683cb33252538b6",
+  "includes_output_and_replay": true,
+  "tested": 3,
+  "correct": 3,
+  "sections": {
+    ".text": 1652,
+    ".data": 455,
+    ".bss": 0,
+    ".rodata": 109612
+  },
+  "results": [
+    {
+      "input": "12345671111111",
+      "expected_moves": 0,
+      "correct": true,
+      "iret": 1309,
+      "model_time_ms": 5.0,
+      "solution": ""
+    },
+    {
+      "input": "25314672313211",
+      "expected_moves": 1,
+      "correct": true,
+      "iret": 2157,
+      "model_time_ms": 8.0,
+      "solution": "R'"
+    },
+    {
+      "input": "21345671111111",
+      "expected_moves": 11,
+      "correct": true,
+      "iret": 16947843,
+      "model_time_ms": 51641.0,
+      "solution": "R B' D2 R' B R' B' R D2 R B"
+    }
+  ],
+  "wall_seconds": 52.026851099999476
+}

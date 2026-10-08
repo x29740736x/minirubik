@@ -1,0 +1,3 @@
+solution (11 moves): R B' D2 R' B R' B' R D2 R B
+
+Program exited with code: 0

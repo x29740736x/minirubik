@@ -1,0 +1,109 @@
+{
+  "model": "RV32_ISS",
+  "ripes_build": "v2.2.6-106-g5b8a616",
+  "compiler": "riscv32-unknown-elf-gcc 11.1.0",
+  "flags": "-O2 -march=rv32i -mabi=ilp32",
+  "tables_identical": true,
+  "base_rv32i_audit_pass": true,
+  "includes_parsing_search_replay_output": true,
+  "sections": {
+    "handwritten": {
+      ".text": 1652,
+      ".data": 455,
+      ".bss": 0,
+      ".rodata": 109612
+    },
+    "gcc": {
+      ".text": 1400,
+      ".data": 15,
+      ".bss": 1154,
+      ".rodata": 109806
+    }
+  },
+  "elf_sha256": {
+    "handwritten": "67473929dfbc499228e17bc0da1803671b053b48289a3d4ba683cb33252538b6",
+    "gcc": "6335439f41377e0744b5764f6083ebda7334920795509d97280df037c95414c7"
+  },
+  "results": [
+    {
+      "implementation": "handwritten",
+      "input": "12345671111111",
+      "correct": true,
+      "iret": 1310,
+      "text_bytes": 1652,
+      "solution": ""
+    },
+    {
+      "implementation": "handwritten",
+      "input": "25314672313211",
+      "correct": true,
+      "iret": 2158,
+      "text_bytes": 1652,
+      "solution": "R'"
+    },
+    {
+      "implementation": "handwritten",
+      "input": "63157423133333",
+      "correct": true,
+      "iret": 4562,
+      "text_bytes": 1652,
+      "solution": "B R2 D B2 R D"
+    },
+    {
+      "implementation": "handwritten",
+      "input": "21345671111111",
+      "correct": true,
+      "iret": 16947844,
+      "text_bytes": 1652,
+      "solution": "R B' D2 R' B R' B' R D2 R B"
+    },
+    {
+      "implementation": "handwritten",
+      "input": "54721631111111",
+      "correct": true,
+      "iret": 46333284,
+      "text_bytes": 1652,
+      "solution": "B2 R' B R' D' B R2 B R B D'"
+    },
+    {
+      "implementation": "gcc",
+      "input": "12345671111111",
+      "correct": true,
+      "iret": 838,
+      "text_bytes": 1400,
+      "solution": ""
+    },
+    {
+      "implementation": "gcc",
+      "input": "25314672313211",
+      "correct": true,
+      "iret": 1337,
+      "text_bytes": 1400,
+      "solution": "R'"
+    },
+    {
+      "implementation": "gcc",
+      "input": "63157423133333",
+      "correct": true,
+      "iret": 2889,
+      "text_bytes": 1400,
+      "solution": "B R2 D B2 R D"
+    },
+    {
+      "implementation": "gcc",
+      "input": "21345671111111",
+      "correct": true,
+      "iret": 13201743,
+      "text_bytes": 1400,
+      "solution": "R B' D2 R' B R' B' R D2 R B"
+    },
+    {
+      "implementation": "gcc",
+      "input": "54721631111111",
+      "correct": true,
+      "iret": 36093921,
+      "text_bytes": 1400,
+      "solution": "B2 R' B R' D' B R2 B R B D'"
+    }
+  ]
+}
