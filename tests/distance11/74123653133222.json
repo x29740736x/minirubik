@@ -1,0 +1,7 @@
+{
+  "input": "74123653133222",
+  "elf_sha256": "67473929dfbc499228e17bc0da1803671b053b48289a3d4ba683cb33252538b6",
+  "correct": true,
+  "iret": 18199714,
+  "solution": "R B2 R2 B R' B R' D B' R B2"
+}

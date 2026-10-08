@@ -1,0 +1,18 @@
+{
+  "model": "RV32_ISS",
+  "elf_sha256": "67473929dfbc499228e17bc0da1803671b053b48289a3d4ba683cb33252538b6",
+  "includes_output_and_replay": true,
+  "tested": 2644,
+  "correct": 2644,
+  "missing_iret": 0,
+  "over_50000000": 0,
+  "complete_all_2644": true,
+  "worst": {
+    "input": "54721631111111",
+    "elf_sha256": "67473929dfbc499228e17bc0da1803671b053b48289a3d4ba683cb33252538b6",
+    "correct": true,
+    "iret": 46333284,
+    "solution": "B2 R' B R' D' B R2 B R B D'"
+  },
+  "wall_seconds": 668.5416783000001
+}
