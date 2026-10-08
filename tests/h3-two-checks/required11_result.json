@@ -1,0 +1,14 @@
+{
+  "implementation": "supplied vin_solver.c",
+  "bfs_and_replay_source": "same vin_solver.c; not independent",
+  "status": "PASS",
+  "start_rank": 524880,
+  "next_rank": 524881,
+  "end_rank_exclusive": 524881,
+  "verified_this_run": 1,
+  "all_state_lengths_verified": false,
+  "replay_mode": "all",
+  "replayed_states": 1,
+  "all_state_paths_replayed": false,
+  "verification_wall_seconds": 0.011589
+}

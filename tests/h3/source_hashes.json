@@ -1,0 +1,18 @@
+[
+  {
+    "Path": "C:\\Users\\vivi2\\Documents\\Codex\\2026-10-03\\hatchable-plugin-app-69e39e675b348191a4d52cf2bc580b79-openai-curated\\outputs\\h3\\vin_solver.c",
+    "Hash": "8AD5ECF442ECC0A5E57DD9263B68CEF3475A61CA6440AC1EBDDC94E893110384"
+  },
+  {
+    "Path": "C:\\Users\\vivi2\\Documents\\Codex\\2026-10-03\\hatchable-plugin-app-69e39e675b348191a4d52cf2bc580b79-openai-curated\\outputs\\h3\\solver_baseline.c",
+    "Hash": "8221833BBB3033BEFBEAEB00DF91516BE0CDBC23A706E0EE0C159CCCCE19B321"
+  },
+  {
+    "Path": "C:\\Users\\vivi2\\Documents\\Codex\\2026-10-03\\hatchable-plugin-app-69e39e675b348191a4d52cf2bc580b79-openai-curated\\outputs\\h3\\verify_all.c",
+    "Hash": "332239C171BA99918857A94FE43E3A2146542E1A76F012A1AD40DE4B3571BE3A"
+  },
+  {
+    "Path": "C:\\Users\\vivi2\\Documents\\Codex\\2026-10-03\\hatchable-plugin-app-69e39e675b348191a4d52cf2bc580b79-openai-curated\\outputs\\h3\\oracle.c",
+    "Hash": "E818F6978AB3D8C72174A341EE12B9500D7862300526E3ED854194144C5C156E"
+  }
+]

@@ -1,0 +1,10 @@
+{
+  "implementation": "supplied vin_solver.c cubie-array IDA*",
+  "status": "PASS",
+  "start_rank": 0,
+  "next_rank": 100,
+  "end_rank_exclusive": 100,
+  "verified_this_run": 100,
+  "complete_entire_domain": false,
+  "h3_wall_seconds": 0.131416
+}

@@ -1,0 +1,29 @@
+{
+  "compiler": "C:\\MinGW\\bin\\gcc.exe",
+  "compiler_version": "gcc.exe (MinGW.org GCC-6.3.0-1) 6.3.0",
+  "flags": "-std=c99 -O2 -Wall -Wextra",
+  "sources": [
+    {
+      "Path": "C:\\Users\\vivi2\\Documents\\Codex\\2026-10-03\\hatchable-plugin-app-69e39e675b348191a4d52cf2bc580b79-openai-curated\\outputs\\h3-two-checks\\vin_solver.c",
+      "Hash": "8AD5ECF442ECC0A5E57DD9263B68CEF3475A61CA6440AC1EBDDC94E893110384"
+    },
+    {
+      "Path": "C:\\Users\\vivi2\\Documents\\Codex\\2026-10-03\\hatchable-plugin-app-69e39e675b348191a4d52cf2bc580b79-openai-curated\\outputs\\h3-two-checks\\build_table.c",
+      "Hash": "C3BA969F341AB656566D353DE5D9F882931B585EDEAA3C13A81B11F069C59D01"
+    },
+    {
+      "Path": "C:\\Users\\vivi2\\Documents\\Codex\\2026-10-03\\hatchable-plugin-app-69e39e675b348191a4d52cf2bc580b79-openai-curated\\outputs\\h3-two-checks\\verify_again.c",
+      "Hash": "A4CE696BEA7884EABC3A8987E777E87725A10357051AE96524A83FA36E2D1735"
+    }
+  ],
+  "executables": [
+    {
+      "Path": "C:\\Users\\vivi2\\Documents\\Codex\\2026-10-03\\hatchable-plugin-app-69e39e675b348191a4d52cf2bc580b79-openai-curated\\outputs\\h3-two-checks\\build_table.exe",
+      "Hash": "AAC315834D1B12F393489779EBED9DB0144D1795DDDA6DD20A0632965A229C03"
+    },
+    {
+      "Path": "C:\\Users\\vivi2\\Documents\\Codex\\2026-10-03\\hatchable-plugin-app-69e39e675b348191a4d52cf2bc580b79-openai-curated\\outputs\\h3-two-checks\\verify_again.exe",
+      "Hash": "B05E82F4589ED9C44DADDA3650EC1E5BE64ABA749376969C554C01D4932958E8"
+    }
+  ]
+}

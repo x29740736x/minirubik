@@ -3,3 +3,14 @@
 *.swp
 solver
 mini
+
+# Local host build products and regenerated verification data
+*.exe
+__pycache__/
+*.pyc
+tests/**/exact_distances.bin
+# These files were overwritten by incomplete reruns; not full PASS evidence.
+tests/h3/h3_result.json
+tests/h3/h3_full.log
+tests/h3-two-checks/two_checks_result.json
+tests/h3-two-checks/two_checks_full.log

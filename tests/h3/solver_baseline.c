@@ -130,7 +130,7 @@ static void unrank_state(uint32_t rank, state_t *state)
         uint8_t q = (uint8_t) (p / f);
         p %= f;
         state->p[i] = available[q];
-        for (uint8_t j = q; j + 1 < CUBIES - i; ++j)
+        for (uint8_t j = q; j + 1U < CUBIES - i; ++j)
             available[j] = available[j + 1U];
         if (i < 5)
             f /= 6U - i;
@@ -195,36 +195,6 @@ static uint8_t *build_table(uint8_t *diameter)
     uint16_t permutation[3][PERMUTATIONS], orientation[3][ORIENTATIONS];
     uint32_t head = 0, tail = 1, level_end = 1;
     state_t state;
-        /* Confirm the sizes of the four major buffers. */
-    size_t table_bytes =
-        (size_t)STATES * sizeof *toward_solved;
-
-    size_t queue_bytes =
-        (size_t)STATES * sizeof *queue;
-
-    size_t permutation_bytes = sizeof permutation;
-    size_t orientation_bytes = sizeof orientation;
-
-    size_t total_bytes =
-        table_bytes + queue_bytes
-        + permutation_bytes + orientation_bytes;
-
-    fprintf(stderr, "Move table: %zu bytes\n", table_bytes);
-    fprintf(stderr, "BFS queue: %zu bytes\n", queue_bytes);
-
-    fprintf(stderr, "Permutation transitions: %zu bytes\n",
-            permutation_bytes);
-
-    fprintf(stderr, "Orientation transitions: %zu bytes\n",
-            orientation_bytes);
-
-    fprintf(stderr, "Major buffers during construction: "
-            "%zu bytes (%.3f MiB)\n",
-            total_bytes, (double)total_bytes / 1048576.0);
-
-    fprintf(stderr, "Retained move table after construction: "
-            "%zu bytes (%.3f MiB)\n",
-            table_bytes, (double)table_bytes / 1048576.0);
     if (!toward_solved || !queue) {
         free(toward_solved);
         free(queue);

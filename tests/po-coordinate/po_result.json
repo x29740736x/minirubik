@@ -1,0 +1,14 @@
+{
+  "implementation": "P/O coordinate IDA*",
+  "bfs_and_replay_source": "same vin_solver.c; not independent",
+  "status": "PASS",
+  "start_rank": 0,
+  "next_rank": 3674160,
+  "end_rank_exclusive": 3674160,
+  "verified_this_run": 3674160,
+  "all_state_lengths_verified": true,
+  "replay_mode": "all",
+  "replayed_states": 3674160,
+  "all_state_paths_replayed": true,
+  "verification_wall_seconds": 477.410739
+}
