@@ -740,7 +740,7 @@ At cycle 1,162, the next screenshot showed `s8 = 0x10000124`. The Memory viewer 
 
 ## Assembly Development Note
 
-The detailed C-to-RV32I design and execution flow is provided separately in **Assembly Development — Design and Execution Flow**. This main report retains the implementation summary, measurements, LED mapping, and pipeline analysis.
+The detailed C-to-RV32I design and execution flow is provided separately in [Assembly Development — Design and Execution Flow](https://github.com/x29740736x/minirubik/blob/main/assembly-development.md).
 
 ## Repository and Reproduction
 
