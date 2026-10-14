@@ -15,202 +15,65 @@ Since BFS explores states in increasing depth, following the recorded moves prod
 The main cost is constructing the complete table before solving an input, requiring both a large move table and a large BFS queue.
 
 
-
-
 ## 1.2 Cube Representation
 
-The original program represents a 2×2×2 Rubik's Cube using two parts: **Permutation (P)** and **Orientation (O)**.
-
-In the original C implementation, a cube state is represented by:
+The cube uses two seven-byte arrays: `p[]` records which corner occupies each position, and `o[]` records its orientation as 0, 1, or 2. The front-upper-left corner is fixed and omitted from the stored state.
 
 ```c
 typedef struct {
-    uint8_t p[CUBIES];
-    uint8_t o[CUBIES];
+    uint8_t p[CUBIES], o[CUBIES];
 } state_t;
 ```
 
-### Permutation (P)
-
-A 2×2×2 Rubik's Cube contains 8 corner cubies.
-
-In this implementation, the front-upper-left corner is fixed as a reference and omitted from the seven-corner representation.
-
-The `p[]` array records **which corner cubie is located at each position**. Therefore, `p[]` describes the permutation of the 7 movable corner cubies.
-
-Since there are 7 movable corner cubies, the total number of possible permutations is
-
-$$
-7! = 5040
-$$
-
-Only one of these permutations corresponds to the solved arrangement.
-
-### Orientation (O)
-
-The `o[]` array records the **orientation of each corner cubie**.
-
-Each corner cubie has three possible orientations, represented by `0`, `1`, and `2`.
-
-However, the orientations of all 7 movable corners are not independent. Due to the corner orientation constraint of the cube, once the orientations of 6 corners are known, the orientation of the final corner is determined.
-
-Therefore, the number of possible orientation states is
-
-$$
-3^6 = 729
-$$
-
-### Complete State Representation
-
-A complete cube state is determined by both its permutation and orientation.
-
-Therefore, the total number of possible states is
-
-$$
-7! \times 3^6
-= 5040 \times 729
-= 3,674,160
-$$
-
-In summary:
-
-- **P (Permutation):** describes which corner cubie is located at each position.
-- **O (Orientation):** describes the orientation of each corner cubie.
-- Together, **P and O uniquely represent a cube state**.
-
-
+There are $7!=5,040$ permutations. The orientation sum must be zero modulo three, so only six orientations are independent, giving $3^6=729$ possibilities. Together, P and O identify one of $7!\times3^6=3,674,160$ valid states.
 
 ## 1.3 State-Space Invariants
 
-The state representation relies on several invariants that remain valid after every legal move.
-
-### Fixed Reference Corner
-
-A 2×2×2 Rubik's Cube has 8 corner cubies. In this implementation, the front-upper-left corner is fixed as a reference corner.
-
-The program only uses the `R`, `B`, and `D` faces to represent cube moves. These moves do not move the reference corner.
-
-Therefore, only the remaining 7 corner cubies need to be represented and permuted.
-
-This reduces the number of possible corner permutations from
+R, B, and D preserve the fixed reference corner and the corner-orientation constraint:
 
 $$
-8!
+\sum_{i=0}^{6}o_i\equiv0\pmod3.
 $$
 
-to
+The constraint excludes arrangements with an inconsistent total twist. It is a modulo-three invariant, not a parity constraint.
 
-$$
-7! = 5040
-$$
+The fixed-corner states form the group $G=\langle R,B,D\rangle$ of order 3,674,160. Its Cayley graph has one vertex per state and edges for R, R2, R′, B, B2, B′, D, D2, and D′. Each edge costs one move in the half-turn metric (HTM).
 
-### Corner Orientation Constraint
-
-Each movable corner has three possible orientations:
-
-$$
-o_i \in \{0,1,2\}
-$$
-
-However, the orientations of the 7 movable corners are not independent.
-
-For every legal cube state, the sum of the corner orientations must satisfy
-
-$$
-\sum_{i=1}^{7} o_i \equiv 0 \pmod{3}
-$$
-
-Therefore, once the orientations of 6 corners are known, the orientation of the final corner is determined automatically.
-
-As a result, only 6 corner orientations need to be stored independently, giving
-
-$$
-3^6 = 729
-$$
-
-possible orientation states.
-
-### Valid State Space
-
-Because the fixed reference corner and the corner orientation constraint are preserved by every legal move, the program only needs to consider
-
-$$
-7! \times 3^6 = 3,674,160
-$$
-
-valid states instead of all possible arbitrary arrangements of the 8 corners.
-
-### State Graph and Diameter
-
-The fixed-corner states form the group $G = \langle R, B, D \rangle$ of order $7! \times 3^6 = 3,674,160$. Its Cayley graph has one vertex per state and edges for the nine moves R, R2, R′, B, B2, B′, D, D2, and D′. Each edge costs one move in the half-turn metric (HTM).
-
-The host BFS reached the complete state space and found a maximum distance of 11, with 2,644 states at that distance. Full coverage establishes that none is farther away, and the nonempty distance-11 level establishes that 11 is attained. The orientation-sum constraint is a modulo-three invariant, not a parity constraint.
+Complete host BFS found 2,644 states at distance 11 and none deeper. Full coverage establishes the upper bound, and the nonempty distance-11 level establishes that the HTM diameter is exactly 11.
 
 ## 1.4 Memory Cost
 
-The original BFS explores all 3,674,160 valid cube states. Its main memory cost comes from the full-state move table, the BFS queue, and two transition tables:
-
-```c
-uint8_t *toward_solved = malloc(STATES);
-
-uint32_t *queue =
-    malloc((size_t) STATES * sizeof *queue);
-
-uint16_t permutation[3][PERMUTATIONS];
-uint16_t orientation[3][ORIENTATIONS];
-```
-
-| Buffer | Storage | Size calculation | Bytes |
-| --- | --- | --- | ---: |
-| Move table | Heap | 3,674,160 × 1 | 3,674,160 |
-| BFS queue | Heap | 3,674,160 × 4 | 14,696,640 |
-| Permutation transition table | Stack | 3 × 5,040 × 2 | 30,240 |
-| Orientation transition table | Stack | 3 × 729 × 2 | 4,374 |
-| **Total** | | | **18,405,414** |
-
-These four buffers coexist during table construction and occupy approximately **17.553 MiB**, using 1 MiB = 1,048,576 bytes. The BFS queue accounts for approximately **79.8%** of this total and is the largest contributor.
-
-After construction, the queue is freed and the local transition tables cease to be live when `build_table()` returns. The move table remains available for solving and occupies approximately **3.504 MiB** until it is freed.
-
-These values are calculated from the buffer dimensions and element sizes. They exclude other variables, call-stack overhead, allocator overhead, and runtime memory, so they do not represent total process peak memory.
-
-### Buffer Size Verification
-
-To verify the calculated memory cost, size-reporting code was added to the original `build_table()` function. The array sizes were obtained using `sizeof`, while the heap allocation sizes were calculated from the allocation lengths and element sizes.
-
-The program was compiled and executed with:
+I added size-reporting code to the original `build_table()`. Array sizes were checked with `sizeof`; heap-buffer sizes were calculated from their allocation lengths and element sizes.
 
 ```bat
 gcc -std=c99 -O2 -Wall -Wextra solver.c -o solver_baseline.exe
 solver_baseline.exe 12345671111111
 ```
 
-The output confirmed that the four major buffers total **18,405,414 bytes (17.553 MiB)** during table construction. The move table retained after construction occupies **3,674,160 bytes (3.504 MiB)**.
+| Buffer | Size calculation | Bytes |
+|---|---|---:|
+| Move table | 3,674,160 × 1 | 3,674,160 |
+| BFS queue | 3,674,160 × 4 | 14,696,640 |
+| P transition table | 3 × 5,040 × 2 | 30,240 |
+| O transition table | 3 × 729 × 2 | 4,374 |
+| **Total during construction** | | **18,405,414 (17.553 MiB)** |
 
-This verifies the buffer-size calculation; it does not measure total process peak memory.
+The size-reporting output confirmed these values. After construction, the retained move table occupies 3,674,160 bytes (3.504 MiB). These are the major buffer sizes, not total process peak memory.
 
-![image](https://hackmd.io/_uploads/SyaRHtJjfl.png)
-
-
+![Buffer-size verification](https://hackmd.io/_uploads/SyaRHtJjfl.png)
 
 ## 1.5 Instruction Cost
 
-The memory sizes in Section 1.4 describe storage requirements. To characterize the baseline's execution cost, I counted the main operations performed by its full-state BFS.
-
-The BFS removes all 3,674,160 states from the queue and examines nine moves for each state. Therefore, it performs:
+I counted the full-state BFS operations from the number of states and moves. Each of 3,674,160 states is removed from the queue and checked against nine moves:
 
 $$
-3{,}674{,}160 \times 9 = 33{,}067{,}440
+3,674,160\times9=33,067,440\text{ successor checks}.
 $$
 
-successor checks. Excluding the initial solved state, 3,674,159 newly discovered states are added to the queue.
+The BFS also enqueues 3,674,159 newly discovered states. Each check requires table accesses, index calculations, and a visited-state test; new states additionally require move-table and queue writes.
 
-Each successor check involves transition-table accesses, index calculations, and a visited-state test. When a previously unseen state is discovered, the BFS also records its inverse move in the move table and adds its rank to the queue. These operations require multiple machine instructions per successor check, making exhaustive table construction the main source of computational work.
+These are calculated algorithmic operation counts, not measured RV32I retired instructions. Ripes instruction measurements are reported separately in Sections 1.6 and 4.3.
 
-The counts above characterize the algorithmic work of the BFS. They are not measured RV32I retired instruction counts, which depend on the compiled implementation. They also exclude the work required to initialize the buffers and construct the transition tables.
-
-The baseline constructs the complete move table before solving the supplied input, even when that input is already solved. Replacing this preprocessing with smaller pattern databases and an input-directed search can reduce the amount of work required for an individual input.
- 
 ## 1.6 Baseline Measurements
 
 ### Experimental Setup
@@ -729,7 +592,7 @@ Both redesigned implementations use IDA* to search from the supplied state. Thei
 
 The assembly additionally uses coordinate transition tables to update P/O ranks directly. This avoids the cubie-array updates and repeated ranking performed at each search node in `vin_solver.c`.
 
-All 2,644 distance-11 inputs produced correct 11-move solutions with successful replay on `RV32_ISS`. The maximum retired instruction count was 46,333,284, below the 50,000,000 limit. The required vector `21345671111111` retired 16,947,844 instructions.
+The complete distance-11 verification and required-vector instruction counts are reported in Section 4.3.
 
 ### GCC-Generated RV32I Reference
 
@@ -777,11 +640,25 @@ GCC retired fewer instructions on all five tested inputs and generated a `.text`
 
 The handwritten version's complete 2,644-case test establishes its distance-11 budget compliance. The five-case GCC comparison does not establish a complete-domain correctness result or an all-distance-11 performance bound for the GCC version.
 
-Section 4.6 reports the three successful pipeline solver tests, explains the instruction stages, and records the GUI load/store observations. The throughput experiment in Section 1.6 is separate from these solver tests.
+The solver pipeline tests in Section 4.6 are separate from the memory-probe throughput experiment in Section 1.6.
 
 ## 4.5 LED Matrix Visualization
 
-**TODO — Not implemented in this submission.** The current program provides console output only; all reported measurements exclude LED rendering.
+The new GUI version displays the cube as a six-face unfolded net on a **35×25 LED Matrix**. Each sticker occupies **4×3 LEDs**. The faces use white (U), orange (L), green (F), red (R), blue (B), and yellow (D), with black separators between faces.
+
+The renderer uses the peripheral symbols `LED_MATRIX_0_BASE`, `LED_MATRIX_0_WIDTH`, and `LED_MATRIX_0_HEIGHT`. With width 35, a pixel's address is:
+
+$$
+\text{LED\_MATRIX\_0\_BASE}+4(y\times35+x).
+$$
+
+`state_to_sticker` converts the input P/O arrays into 24 sticker-color indices. R, B, and D each update three four-sticker cycles. `sticker_apply_move` uses the same move numbers 0–8 as the solver, including half and inverse turns.
+
+After finding a solution, `ida_found` restores and displays the original input. In `replay_loop`, each actual `solution_path` move updates both the cubie state and the sticker array, followed by a redraw and short delay. The animation therefore follows the computed solution rather than a prerecorded sequence.
+
+I checked R/B/D four-turn restoration, move/inverse restoration, and agreement between P/O decoding and single-face sticker moves. The one-move input `25314672313211` displayed the scrambled cube and returned to six solved faces after R′. An 11-move input was also tested through the LED replay and returned to the solved display.
+
+The working GUI-ready source contains the LED renderer directly. The integration source retains an assemble-time `RENDER` switch, but the common GUI/CLI build workflow still needs to be finalized. All instruction counts and section sizes in Sections 4.3–4.4 belong to the original **non-LED build**, not this new GUI version. The final LED source and screenshots still need to be added to the submitted repository and note.
 
 ## 4.6 Pipeline Verification
 
@@ -861,111 +738,21 @@ At cycle 1,162, the next screenshot showed `s8 = 0x10000124`. The Memory viewer 
 
 > Figure 4. The Memory viewer confirms that the child P rank, 3,294 (`0x0cde`), was stored at `0x10000124` as bytes `0xde` and `0x0c` in little-endian order.
 
-## Assembly Development — Design and Execution Flow
+## Assembly Development Note
 
-The assembly was developed in small steps: input parsing and validation, cubie moves, coordinate ranking, heuristic lookup, iterative search, and solution verification. The final search uses P/O transition tables, while the cubie move routines are retained for replay.
-
-### 1. Input Parsing
-
-The input is stored as a 14-character null-terminated string. The parser subtracts ASCII `'1'` from each character and writes the resulting value into a 14-byte state buffer.
-
-The first seven bytes store corner permutation values, and the remaining seven bytes store corner orientations. Source and destination pointers advance by one byte after each character, while a counter decreases from 14 to zero.
-
-### 2. Input Validation
-
-The parser checks the following conditions:
-
-1. **Length:** Exactly 14 characters, followed by a null terminator.
-2. **Permutation range:** P values must be between 0 and 6.
-3. **Permutation uniqueness:** A bit mask records the corners already seen and rejects duplicates.
-4. **Orientation range:** O values must be between 0 and 2.
-5. **Orientation constraint:** The sum of the seven O values must be divisible by three. Repeated subtraction calculates the remainder without division.
-
-Invalid input exits with status `1`. Valid input proceeds to search. The earlier input tests covered valid states, incorrect lengths, out-of-range values, duplicates, and an invalid orientation sum.
-
-### 3. R Turn
-
-The R turn uses `source_r` to select which old corner enters each new position and `twist_r` to update its orientation. If the new orientation is at least three, the routine subtracts three.
-
-The result is written into `next_state`, so reading the original state is not affected by partially written results. I checked the single-turn values, four-turn restoration, and R followed by R′. R′ is implemented as three quarter-turns.
-
-### 4. B and D Turns
-
-B and D share the same turn loop but use their own source and twist tables. D changes corner positions without adding an orientation twist. Single-turn values, four-turn restoration, and inverse-turn restoration were tested.
-
-### 5. Apply a Move
-
-`apply_move()` accepts move numbers 0 through 8, corresponding to R, R2, R′, B, B2, B′, D, D2, and D′.
-
-Repeated subtraction by three determines the face. The remaining value plus one gives the number of quarter-turns. After each turn, `copy_state()` copies `next_state` back to `state`.
-
-Because the routine calls other routines, it saves its return address and the `s0` and `s1` registers it uses, then restores them before returning. This uses a bounded call stack without recursion.
-
-### 6. Encode P and O
-
-`rank_p()` counts smaller corner values to the right of each position and accumulates a permutation rank from 0 to 5,039. Its small-factor multiplication is performed by repeated addition.
-
-`rank_o()` encodes the first six orientations as a base-three value from 0 to 728. Each step calculates `3 * o + O[i]` using a shift and addition. The seventh orientation is determined by the validated orientation-sum constraint.
-
-The input is ranked once before search. The final search does not reconstruct and rank cubie arrays at every node.
-
-### 7. Heuristic and Host-Generated Tables
-
-The heuristic is `max(p_distance[P], o_distance[O])`. These abstract distances are lower bounds on the complete solution length, as explained in Section 2.3.
-
-The host C tool generates the two distance tables and nine-move P/O transition tables. The rebuild script appends them as read-only data and produces the ELF. The target still performs the search itself.
-
-During search, a move produces its child coordinates through table lookups. Each transition row contains nine two-byte entries, so its address is `table_base + 18 * rank + 2 * move`, calculated with shifts and additions.
-
-### 8. Iterative IDA* Search
-
-The main search uses `s3` for the current depth and `s4` for the limit. P/O ranks are stored in `search_coordinates`; `search_next_move` and `search_previous_face` preserve the information needed to resume a parent node.
-
-The execution flow is:
-
-```text
-Parse and validate input
-    → Back up the original cubie state
-    → Rank P and O; set limit to the initial heuristic
-    → Check g + h and whether the coordinates are solved
-    → Try the next move, skipping a consecutive move on the same face
-    → Look up child P/O and descend
-    → Backtrack when pruned or when all moves have been tried
-    → Increase the limit and restart if necessary, up to 11
-    → Replay and verify the first solution
-    → Print the solution and exit
-```
-
-The parent's next-move value is advanced before descending. Backtracking therefore resumes at its next candidate rather than trying the same move again. Search depth is managed explicitly; the routine does not recursively call itself.
-
-### 9. Reduce Repeated Work
-
-The final revision retains the distance-table bases in `s0` and `s1`, and transition-table bases in `s10` and `s11`. During search, `s8` points to the current coordinate entry and `s9` points to the current next-move byte.
-
-Descending advances these pointers by four bytes and one byte; backtracking reverses those changes. Child coordinates remain in `s2` and `s5` for the immediate heuristic check, reducing unnecessary loads and helper calls. When a parent resumes, its coordinates are read from its saved entry.
-
-Once a solution is found, `s8` and `s9` are reused as the replay index and solution length. The search pointers are no longer needed at that point. The original 168-byte `search_states` allocation remains, but only its first 14 bytes are used to back up the input for replay.
-
-### 10. Replay, Output, and Final Tests
-
-After search, the program restores the original input and applies every move from `solution_path` using the cubie-level routines. It checks that both coordinate ranks are zero before printing the solution and exiting with status `0`.
-
-The final revision passed all 2,644 distance-11 tests on `RV32_ISS`; the maximum count was 46,333,284 instructions. The solved, short-scramble, and required distance-11 cases also passed on `RV32_5S`. The GCC comparison is reported in Section 4.4; the handwritten version currently uses more instructions and code bytes than that reference.
-
-LED rendering is not implemented. Pipeline execution has been tested, and the instruction-level explanation is included in Section 4.6. GUI stepping observations for the transition load and coordinate store are recorded in Section 4.6.
-
+The detailed C-to-RV32I design and execution flow is provided separately in **Assembly Development — Design and Execution Flow**. This main report retains the implementation summary, measurements, LED mapping, and pipeline analysis.
 
 ## Repository and Reproduction
 
 This project started from [sysprog21/minirubik at 231796c](https://github.com/sysprog21/minirubik/tree/231796cc48868f4ea276f652139b6bebbad0cd02), the parent of my first project-specific commit. My work is recorded in [the repository history](https://github.com/x29740736x/minirubik/commits/main/).
 
-- [RV32I source and build tools](rv32i/README.md)
-- [Host verification sources and evidence limitations](tests/VERIFICATION.md)
-- [Complete distance-11 results](tests/distance11/summary.json)
-- [GCC comparison](gcc-comparison/README.md)
-- [Pipeline measurements](tests/pipeline/summary.json)
+- [RV32I source and build tools](https://github.com/x29740736x/minirubik/blob/main/rv32i/README.md)
+- [Host verification sources and evidence limitations](https://github.com/x29740736x/minirubik/blob/main/tests/VERIFICATION.md)
+- [Complete distance-11 results](https://github.com/x29740736x/minirubik/blob/main/tests/distance11/summary.json)
+- [GCC comparison](https://github.com/x29740736x/minirubik/blob/main/gcc-comparison/README.md)
+- [Pipeline measurements](https://github.com/x29740736x/minirubik/blob/main/tests/pipeline/summary.json)
 
-The completed H3 rerun verified all 3,674,160 states. The full result and execution log are preserved in [h3_complete_result.json](tests/h3/h3_complete_result.json) and [h3_complete_run.log](tests/h3/h3_complete_run.log).
+The completed H3 rerun verified all 3,674,160 states. The full result and execution log are preserved in [h3_complete_result.json](https://github.com/x29740736x/minirubik/blob/main/tests/h3/h3_complete_result.json) and [h3_complete_run.log](https://github.com/x29740736x/minirubik/blob/main/tests/h3/h3_complete_run.log).
 
 ## References
 
