@@ -58,6 +58,4 @@ ida_found converts the original state into sticker colors and draws it. After ea
 
 The first GUI attempts displayed a stale test program even though the editor contained new source. After reopening Ripes and loading the source, the disassembly matched the input parser and the one-move solve displayed correctly. The exact cause of the stale assembly state was not established.
 
-## 7. AI-Assisted Development
-
-AI generated and revised parts of the C, assembly, LED integration, report, and test tools. I applied suggestions in steps and checked their behavior through the recorded tests. The LED integration was revised to remove unsupported or unverified editor build assumptions and to reload the actual replay move. Code and measurements remain linked from the main report; this supplement describes the process rather than asserting that all work was independently authored.
+AI assistance is disclosed in the [main report](https://github.com/x29740736x/minirubik/blob/main/report.md#ai-usage).
