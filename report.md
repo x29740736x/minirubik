@@ -649,7 +649,7 @@ The new GUI version displays the cube as a six-face unfolded net on a **35×25 L
 The renderer uses the peripheral symbols `LED_MATRIX_0_BASE`, `LED_MATRIX_0_WIDTH`, and `LED_MATRIX_0_HEIGHT`. With width 35, a pixel's address is:
 
 $$
-\text{LED\_MATRIX\_0\_BASE}+4(y\times35+x).
+\mathrm{Address}=B+4(35y+x)
 $$
 
 `state_to_sticker` converts the input P/O arrays into 24 sticker-color indices. R, B, and D each update three four-sticker cycles. `sticker_apply_move` uses the same move numbers 0–8 as the solver, including half and inverse turns.
