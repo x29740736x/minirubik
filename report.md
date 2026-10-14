@@ -754,6 +754,12 @@ This project started from [sysprog21/minirubik at 231796c](https://github.com/sy
 
 The completed H3 rerun verified all 3,674,160 states. The full result and execution log are preserved in [h3_complete_result.json](https://github.com/x29740736x/minirubik/blob/main/tests/h3/h3_complete_result.json) and [h3_complete_run.log](https://github.com/x29740736x/minirubik/blob/main/tests/h3/h3_complete_run.log).
 
+## AI Usage
+
+I used ChatGPT/Codex to explain concepts and suggest changes, debug problems, and revise the English in this report. The assistance included C arithmetic changes, iterative search frames, RV32I assembly, LED routines, and verification tools. Codex also executed the GCC comparison and pipeline CLI measurements reported above; I ran the full H3 verification, the complete distance-11 test, and the GUI/LED checks.
+
+I applied and tested changes in stages. For example, I tested cubie and sticker moves before integrating LED replay. The integration reloads each move from solution_path because apply_move changes argument registers. When the Ripes editor displayed stale machine code, reopening and loading the source resolved the observed mismatch. Generated output was checked through the recorded tests, and the report identifies incomplete work and results that do not outperform GCC.
+
 ## References
 
 - [Assignment 1 specification](https://hackmd.io/@sysprog/2026-arch-homework1)
