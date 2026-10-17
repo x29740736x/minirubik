@@ -1,5 +1,9 @@
 # Assignment1 Note
 
+This project is based on a fork of the instructor's [sysprog21/minirubik](https://github.com/sysprog21/minirubik) repository. My implementation, commit history, and test results are available in [my GitHub repository](https://github.com/x29740736x/minirubik).
+
+[Full presentation video](https://youtu.be/QssVQyZIu8o)
+
 # Stage 1 — Characterize the Baseline
 
 The first stage is to analyze the original `minirubik` implementation and identify where its computational cost comes from, especially in terms of **memory usage, instruction count, and algorithm design**.
@@ -652,13 +656,31 @@ $$
 \mathrm{Address}=B+4(35y+x)
 $$
 
+Here, $B$ is `LED_MATRIX_0_BASE`, and $(x,y)$ is the LED pixel coordinate.
+
 `state_to_sticker` converts the input P/O arrays into 24 sticker-color indices. R, B, and D each update three four-sticker cycles. `sticker_apply_move` uses the same move numbers 0–8 as the solver, including half and inverse turns.
 
 After finding a solution, `ida_found` restores and displays the original input. In `replay_loop`, each actual `solution_path` move updates both the cubie state and the sticker array, followed by a redraw and short delay. The animation therefore follows the computed solution rather than a prerecorded sequence.
 
 I checked R/B/D four-turn restoration, move/inverse restoration, and agreement between P/O decoding and single-face sticker moves. The one-move input `25314672313211` displayed the scrambled cube and returned to six solved faces after R′. An 11-move input was also tested through the LED replay and returned to the solved display.
 
-The working GUI-ready source contains the LED renderer directly. The integration source retains an assemble-time `RENDER` switch, but the common GUI/CLI build workflow still needs to be finalized. All instruction counts and section sizes in Sections 4.3–4.4 belong to the original **non-LED build**, not this new GUI version. The final LED source and screenshots still need to be added to the submitted repository and note.
+The LED source and build instructions are available in [rv32i-led](https://github.com/x29740736x/minirubik/tree/main/rv32i-led). `build.py --mode gui` generates the complete Ripes GUI source, while `build.py --mode cli` excludes the renderer and produces the measurement ELF. Both builds use the same search and replay logic; the build script resolves the renderer guards before assembly.
+
+All instruction counts and section sizes in Sections 4.3–4.4 refer to the original **non-LED build**. The GUI animation was tested separately. The default LED source uses the required distance-11 input `21345671111111`.
+![image](https://hackmd.io/_uploads/ryRmry0jMe.png)
+
+
+> Figure 5. Initial LED display for the distance-11 input `21345671111111`, before replaying the solution.
+
+![image](https://hackmd.io/_uploads/Hy04B10izx.png)
+
+> Figure 6. The LED display returns to six solved faces after the computed 11-move solution. Console output confirms exit code 0.
+
+### LED Demonstration Video
+
+[Watch the 11-move LED solution replay](https://youtu.be/F61T-GBA0RE)
+
+The video shows the initial scrambled state, replay of the computed solution, and the final solved display.
 
 ## 4.6 Pipeline Verification
 
@@ -747,6 +769,7 @@ The detailed C-to-RV32I design and execution flow is provided separately in [Ass
 This project started from [sysprog21/minirubik at 231796c](https://github.com/sysprog21/minirubik/tree/231796cc48868f4ea276f652139b6bebbad0cd02), the parent of my first project-specific commit. My work is recorded in [the repository history](https://github.com/x29740736x/minirubik/commits/main/).
 
 - [RV32I source and build tools](https://github.com/x29740736x/minirubik/blob/main/rv32i/README.md)
+- [LED source and GUI/CLI build instructions](https://github.com/x29740736x/minirubik/tree/main/rv32i-led)
 - [Host verification sources and evidence limitations](https://github.com/x29740736x/minirubik/blob/main/tests/VERIFICATION.md)
 - [Complete distance-11 results](https://github.com/x29740736x/minirubik/blob/main/tests/distance11/summary.json)
 - [GCC comparison](https://github.com/x29740736x/minirubik/blob/main/gcc-comparison/README.md)
@@ -756,7 +779,7 @@ The completed H3 rerun verified all 3,674,160 states. The full result and execut
 
 ## AI Usage
 
-I used ChatGPT/Codex to explain concepts and suggest changes, debug problems, and revise the English in this report. The assistance included C arithmetic changes, iterative search frames, RV32I assembly, LED routines, and verification tools. Codex also executed the GCC comparison and pipeline CLI measurements reported above; I ran the full H3 verification, the complete distance-11 test, and the GUI/LED checks.
+I used ChatGPT/Codex to explain concepts, suggest changes, generate and revise portions of the code, debug problems, and improve the English in this report. The assistance included C arithmetic changes, iterative search frames, RV32I assembly, LED routines, and verification tools. Codex also executed the GCC comparison and pipeline CLI measurements reported above; I ran the full H3 verification, the complete distance-11 test, and the GUI/LED checks.
 
 I applied and tested changes in stages. For example, I tested cubie and sticker moves before integrating LED replay. The integration reloads each move from solution_path because apply_move changes argument registers. When the Ripes editor displayed stale machine code, reopening and loading the source resolved the observed mismatch. Generated output was checked through the recorded tests, and the report identifies incomplete work and results that do not outperform GCC.
 
