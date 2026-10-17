@@ -2,7 +2,7 @@
 
 This project is based on a fork of the instructor's [sysprog21/minirubik](https://github.com/sysprog21/minirubik) repository. My implementation, commit history, and test results are available in [my GitHub repository](https://github.com/x29740736x/minirubik).
 
-[Full presentation video](https://youtu.be/QssVQyZIu8o)
+[Full presentation video](https://youtu.be/Z8IXC4wzoQA)
 
 # Stage 1 — Characterize the Baseline
 
